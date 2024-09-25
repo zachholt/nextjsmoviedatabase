@@ -1,4 +1,4 @@
-import NavigationHeader from "@/components/NavigationHeader";
+import NavigationHeader from "../components/NavigationHeader";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Image from "next/image";
 

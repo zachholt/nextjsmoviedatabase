@@ -1,28 +1,39 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useQuery } from "@tanstack/react-query";
 import Dropdown from "@/components/Dropdown";
+import { useRouter } from 'next/navigation';
 
 export default function AddMovieForm() {
+    const router = useRouter();
 
     const [selectedGenre, setSelectedGenre] = useState("");
     const [selectedDirector, setSelectedDirector] = useState("");
     const [selectedRating, setSelectedRating] = useState("");
-
+    const [selectedActors, setSelectedActors] = useState<number[]>([]);
 
     const genres = [
         { id: 1, genre: "Action" },
+        { id: 2, genre: "Adventure" },
+        { id: 3, genre: "Comedy" },
+        { id: 4, genre: "Drama" },
+        { id: 5, genre: "Fantasy" },
+        { id: 6, genre: "Horror" },
+        { id: 7, genre: "Mystery" },
+        { id: 8, genre: "Romance" },
+        { id: 9, genre: "Science Fiction" },
+        { id: 10, genre: "Thriller" },
     ];
 
     const { data: directors, isLoading, error } = useQuery<any[]>({
-        queryKey: ['directors'],
+        queryKey: ["directors" + Math.floor(Math.random() * 1000)],
         queryFn: async () => {
-            const response = await axios.get('http://localhost:8080/api/directors');
+            const response = await axios.get(`http://localhost:8080/api/directors`);
             return response.data.map((director: { id: number, firstName: string; lastName: string; dateOfBirth: string; }) => ({
                 id: director.id,
                 value: `${director.firstName} ${director.lastName}`,
@@ -31,8 +42,24 @@ export default function AddMovieForm() {
         },
     });
 
+    const { data: actors, isLoading: actorsLoading, error: actorsError } = useQuery<any[]>({
+        queryKey: ["actors" + Math.floor(Math.random() * 1000)],
+        queryFn: async () => {
+            const response = await axios.get(`http://localhost:8080/api/actors`);
+            return response.data.map((actor: { id: number, firstName: string; lastName: string; dateOfBirth: string; }) => ({
+                id: actor.id,
+                name: `${actor.firstName} ${actor.lastName}`,
+                dateOfBirth: actor.dateOfBirth,
+            }));
+        },
+    });
+
     const ratings = [
-        { id: 1, value: "PG", description: "Suitable for all ages" },
+        { id: 1, value: "G", description: "General Audience" },
+        { id: 2, value: "PG", description: "Parental Guidance Suggested" },
+        { id: 3, value: "PG-13", description: "Parents Strongly Cautioned" },
+        { id: 4, value: "R", description: "Restricted" },
+        { id: 5, value: "NC-17", description: "Adults Only" },
     ];
 
     const validationSchema = yup.object({
@@ -46,119 +73,181 @@ export default function AddMovieForm() {
     const {
         register,
         handleSubmit,
-        formState: { errors }
+        formState: { errors },
+        setValue,
+        watch,
+        control
     } = useForm({
         resolver: yupResolver(validationSchema),
     });
 
-    useEffect(() => {
-        console.log(errors);
-    }, [errors]);
 
-    // Handle form submission
-    const onSubmit = (data: any, e: any) => {
-        e?.preventDefault();
-        
+    const onSubmit = async (data: any) => {
         const director = directors?.find((d: any) => d.value === selectedDirector);
         const genre = genres.find((g: any) => g.genre === selectedGenre);
         const rating = ratings.find((r: any) => r.value === selectedRating);
 
-
-        axios.post('http://localhost:8080/api/movies/', {
+        const movieData = {
             id: 0,
             movieTitle: data.movieTitle,
             movieLength: data.movieLength,
             releaseDate: data.releaseDate,
             trailerUrl: data.trailerUrl,
-            director: director ? {
+            director: director && {
                 id: director.id,
                 firstName: director.firstName,
                 lastName: director.lastName,
                 dateOfBirth: director.dateOfBirth,
-            } : null,
-            genre: genre ? {
+            },
+            genre: genre && {
                 id: genre.id,
                 genre: genre.genre,
-            } : null,
-            rating: rating ? {
+            },
+            rating: rating && {
                 id: rating.id, 
                 rating: rating.value,
                 description: rating.description,
-            } : null,
-            actors: [],
-            overview: data.overview,
-        })
-            .then(function (response) {
-                console.log(response);
-                console.log(data)
-                window.location.href = "/movies"; 
-            })
-            .catch(function (error) {
-                console.log(error);
-                console.log(data)
-            });
+            },
+            actors: selectedActors.map(id => ({ id })),
+            overview: data.overview
+        };
+
+        console.log('uploading movie data:', movieData);
+
+        try {
+            const response = await axios.post('http://localhost:8080/api/movies/', movieData);
+            console.log('Movie successfully added. Server response:', response.data);
+            router.push("/movies");
+        } catch (error) {
+            console.error('Failed to add movie:', error);
+            if (axios.isAxiosError(error)) {
+                console.error('Error response:', error.response?.data);
+                console.error('Error status:', error.response?.status);
+            }
+        }
     };
 
+    const handleActorChange = (actorId: number) => {
+        setSelectedActors(prev => 
+            prev.includes(actorId)
+                ? prev.filter(id => id !== actorId)
+                : [...prev, actorId]
+        );
+    };
+
+//    if (isLoading || actorsLoading) return <div className="text-center py-4 text-black">Loading...</div>;
+    if (error || actorsError) return <div className="text-center py-4 text-red-500">An error occurred: {(error || actorsError)?.message}</div>;
+
     return (
-        <form onSubmit={handleSubmit(onSubmit)} className="max-w-sm mx-auto space-y-5 pt-5">
-            <div className="mb-5">
-                <label className="text-black block mb-2 text-sm font-medium ">Movie Title</label>
-                <input
-                    {...register("movieTitle")}
-                    className="bg-gray-50 border border-gray-300 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 text-black"
-                    required
-                />
-                {errors.movieTitle && <p className="text-red-500 text-sm">{errors.movieTitle.message}</p>}
-            </div>
-            <div className="mb-5">
-                <label className="text-black block mb-2 text-sm font-medium ">Movie Length (in minutes)</label>
-                <input
-                    {...register("movieLength")}
-                    type="number"
-                    className="bg-gray-50 border border-gray-300 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 text-black"
-                    required
-                />
-                {errors.movieLength && <p className="text-red-500 text-sm">{errors.movieLength.message}</p>}
-            </div>
-            <div className="mb-5">
-                <label className="block mb-2 text-sm font-medium text-black">Release Date</label>
-                <input
-                    {...register("releaseDate")}
-                    type="date"
-                    className="bg-gray-50 border border-gray-300 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 text-black"
-                    required
-                />
-                {errors.releaseDate && <p className="text-red-500 text-sm">{errors.releaseDate.message}</p>}
-            </div>
-            <div className="mb-5">
-                <label className="text-black block mb-2 text-sm font-medium ">Trailer URL</label>
-                <input
-                    {...register("trailerUrl")}
-                    placeholder="https://www.youtube.com/watch?v=uONwiZPuihU"
-                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5"
-                    required
-                />
-                {errors.trailerUrl && <p className="text-red-500 text-sm">{errors.trailerUrl.message}</p>}
-            </div>
-            <div className="mb-5">
-                <label className="text-black block mb-2 text-sm font-medium ">Overview</label>
-                <textarea
-                    {...register("overview")}
-                    className="bg-gray-50 border border-gray-300 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 text-black"
-                    required
-                />
-                {errors.overview && <p className="text-red-500 text-sm">{errors.overview.message}</p>}
-            </div>
+        <div className="container mx-auto px-4 py-8">
+            <form onSubmit={handleSubmit(onSubmit)} className="max-w-lg mx-auto">
+                <h1 className="text-3xl font-bold text-black mb-4">Add New Movie</h1>
+                
+                <div className="mb-4">
+                    <label htmlFor="movieTitle" className="block text-gray-700 text-sm font-bold mb-2">Movie Title</label>
+                    <input
+                        {...register("movieTitle")}
+                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    />
+                    {errors.movieTitle && <p className="text-red-500 text-xs italic">{errors.movieTitle.message}</p>}
+                </div>
 
-            <Dropdown items={ratings?.map(r => ({ value: r.value }))} selectedValue={selectedRating} onSelect={setSelectedRating} buttonLabel="Rating" />
+                <div className="mb-4">
+                    <label htmlFor="movieLength" className="block text-gray-700 text-sm font-bold mb-2">Movie Length (in minutes)</label>
+                    <input
+                        {...register("movieLength")}
+                        type="number"
+                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    />
+                    {errors.movieLength && <p className="text-red-500 text-xs italic">{errors.movieLength.message}</p>}
+                </div>
 
-            <Dropdown items={directors?.map(d => ({ value: d.value }))} selectedValue={selectedDirector} onSelect={setSelectedDirector} buttonLabel="Director" />
+                <div className="mb-4">
+                    <label htmlFor="releaseDate" className="block text-gray-700 text-sm font-bold mb-2">Release Date</label>
+                    <input
+                        {...register("releaseDate")}
+                        type="date"
+                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    />
+                    {errors.releaseDate && <p className="text-red-500 text-xs italic">{errors.releaseDate.message}</p>}
+                </div>
 
-            <Dropdown items={genres.map(g => ({ value: g.genre }))} selectedValue={selectedGenre} onSelect={setSelectedGenre} buttonLabel="Genre" />
+                <div className="mb-4">
+                    <label htmlFor="trailerUrl" className="block text-gray-700 text-sm font-bold mb-2">Trailer URL</label>
+                    <input
+                        {...register("trailerUrl")}
+                        placeholder="https://www.youtube.com/watch?v=uONwiZPuihU"
+                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                    />
+                    {errors.trailerUrl && <p className="text-red-500 text-xs italic">{errors.trailerUrl.message}</p>}
+                </div>
 
-            <button type="submit" className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-                Add Movie
-            </button>
-        </form>
+                <div className="mb-4">
+                    <label htmlFor="overview" className="block text-gray-700 text-sm font-bold mb-2">Overview</label>
+                    <textarea
+                        {...register("overview")}
+                        className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                        rows={4}
+                    />
+                    {errors.overview && <p className="text-red-500 text-xs italic">{errors.overview.message}</p>}
+                </div>
+
+                <div className="mb-4">
+                    <Dropdown 
+                        items={ratings.map(r => ({ value: r.value, description: r.description }))} 
+                        selectedValue={selectedRating} 
+                        onSelect={setSelectedRating} 
+                        buttonLabel="Rating" 
+                    />
+                </div>
+
+                <div className="mb-4">
+                    <Dropdown 
+                        items={directors?.map(d => ({ value: d.value })) ?? []} 
+                        selectedValue={selectedDirector} 
+                        onSelect={setSelectedDirector} 
+                        buttonLabel="Director" 
+                    />
+                </div>
+
+                <div className="mb-4">
+                    <Dropdown 
+                        items={genres.map(g => ({ value: g.genre }))} 
+                        selectedValue={selectedGenre} 
+                        onSelect={setSelectedGenre} 
+                        buttonLabel="Genre" 
+                    />
+                </div>
+
+                <div className="mb-4">
+                    <label className="block text-gray-700 text-sm font-bold mb-2">Actors</label>
+                    <div className="max-h-60 overflow-y-auto border rounded p-2">
+                        {actors && actors?.map((actor) => (
+                            <div key={actor.id} className="flex items-center mb-2">
+                                <input
+                                    type="checkbox"
+                                    id={`actor-${actor.id}`}
+                                    checked={selectedActors.includes(actor.id)}
+                                    onChange={() => handleActorChange(actor.id)}
+                                    className="mr-2"
+                                />
+                                <label htmlFor={`actor-${actor.id}`} className="text-gray-700">
+                                    {actor.name}
+                                </label>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                    <button
+                        type="submit"
+                        className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                    >
+                        Add Movie
+                    </button>
+                </div>
+            </form>
+        </div>
     );
 }
