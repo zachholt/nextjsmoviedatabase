@@ -4,42 +4,32 @@ import React from 'react';
 import axios from "axios";
 import { useForm } from "react-hook-form";
 import { useRouter } from 'next/navigation';
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
 
-export default function AddDirectorPage() {
-  const { register, handleSubmit, formState: { errors } } = useForm<Director>();
+  
+type Entity = Actor | Director;
+
+const AddEntityPage = ({ params }: { params: { entityType: string } }) => {
+  const { entityType } = params;
   const router = useRouter();
+  const { register, handleSubmit, formState: { errors } } = useForm<Entity>();
 
-  const onSubmit = async (data: Director) => {
-
-    const directorData = {
-      director: data && {
-          id: data.id,
-          firstName: data.firstName,
-          lastName: data.lastName,
-          dateOfBirth: data.dateOfBirth,
-      }
-  };
-
-  console.log('uploading movie data:', directorData);
-
-
+  const onSubmit = async (data: Entity) => {
     try {
-      const response = await axios.post('http://localhost:8080/api/directors/', data);
-      console.log('Director successfully added. Server response:', response.data);
-      router.push("/directors");
-  } catch (error) {
-      console.error('Failed to add director:', error);
-      if (axios.isAxiosError(error)) {
-          console.error('Error response:', error.response?.data);
-          console.error('Error status:', error.response?.status);
-      }
-  }
+      await axios.post(`http://localhost:8080/api/${entityType}s/`, data)
+        .then(() => {
+          router.push(`/${entityType}s`);
+        });
+    } catch (error) {
+      console.error(`Error adding ${entityType}:`, error);
+    }
   };
 
   return (
     <div className="container mx-auto px-4 py-8">
       <form onSubmit={handleSubmit(onSubmit)} className="max-w-lg mx-auto">
-        <h1 className="text-3xl font-bold text-black mb-4">Add Director</h1>
+        <h1 className="text-3xl font-bold text-black mb-4">Add {entityType}</h1>
         
         <div className="mb-4">
           <label htmlFor="firstName" className="block text-gray-700 text-sm font-bold mb-2">First Name</label>
@@ -68,16 +58,18 @@ export default function AddDirectorPage() {
           />
           {errors.dateOfBirth && <p className="text-red-500 text-xs italic">{errors.dateOfBirth.message}</p>}
         </div>
-
+        
         <div className="flex items-center justify-between">
           <button
             type="submit"
             className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
           >
-            Add Director
+            Add {entityType}
           </button>
         </div>
       </form>
     </div>
   );
 }
+
+export default AddEntityPage;

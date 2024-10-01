@@ -8,9 +8,16 @@ import axios from "axios";
 import { useQuery } from "@tanstack/react-query";
 import Dropdown from "@/components/Dropdown";
 import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function AddMovieForm() {
     const router = useRouter();
+    const queryClient = useQueryClient();
+
+    // useEffect(() => {
+    //     window.location.reload();
+    //     e.preventDefault()    
+    // }, []);
 
     const [selectedGenre, setSelectedGenre] = useState("");
     const [selectedDirector, setSelectedDirector] = useState("");
@@ -30,25 +37,29 @@ export default function AddMovieForm() {
         { id: 10, genre: "Thriller" },
     ];
 
-    const { data: directors, isLoading, error } = useQuery<any[]>({
-        queryKey: ["directors" + Math.floor(Math.random() * 1000)],
+    const { data: directors, isLoading: directorsLoading, error: directorsError } = useQuery<any[]>({
+        queryKey: ["directors"],
         queryFn: async () => {
             const response = await axios.get(`http://localhost:8080/api/directors`);
             return response.data.map((director: { id: number, firstName: string; lastName: string; dateOfBirth: string; }) => ({
                 id: director.id,
                 value: `${director.firstName} ${director.lastName}`,
+                firstName: director.firstName,
+                lastName: director.lastName,
                 dateOfBirth: director.dateOfBirth,
             }));
         },
     });
 
     const { data: actors, isLoading: actorsLoading, error: actorsError } = useQuery<any[]>({
-        queryKey: ["actors" + Math.floor(Math.random() * 1000)],
+        queryKey: ["actors"],
         queryFn: async () => {
             const response = await axios.get(`http://localhost:8080/api/actors`);
             return response.data.map((actor: { id: number, firstName: string; lastName: string; dateOfBirth: string; }) => ({
                 id: actor.id,
                 name: `${actor.firstName} ${actor.lastName}`,
+                firstName: actor.firstName,
+                lastName: actor.lastName,
                 dateOfBirth: actor.dateOfBirth,
             }));
         },
@@ -74,9 +85,6 @@ export default function AddMovieForm() {
         register,
         handleSubmit,
         formState: { errors },
-        setValue,
-        watch,
-        control
     } = useForm({
         resolver: yupResolver(validationSchema),
     });
@@ -84,14 +92,17 @@ export default function AddMovieForm() {
 
     const onSubmit = async (data: any) => {
         const director = directors?.find((d: any) => d.value === selectedDirector);
-        const genre = genres.find((g: any) => g.genre === selectedGenre);
-        const rating = ratings.find((r: any) => r.value === selectedRating);
+        console.log('Selected director:', selectedDirector);
+        console.log('Director object:', director);
+
+        const releaseDate = new Date(data.releaseDate);
+        releaseDate.setDate(releaseDate.getDate() + 1);
 
         const movieData = {
             id: 0,
             movieTitle: data.movieTitle,
             movieLength: data.movieLength,
-            releaseDate: data.releaseDate,
+            releaseDate: releaseDate.toISOString().split('T')[0], // Convert the modified date to the desired format
             trailerUrl: data.trailerUrl,
             director: director && {
                 id: director.id,
@@ -99,24 +110,25 @@ export default function AddMovieForm() {
                 lastName: director.lastName,
                 dateOfBirth: director.dateOfBirth,
             },
-            genre: genre && {
-                id: genre.id,
-                genre: genre.genre,
+            genre: genres.find((g: any) => g.genre === selectedGenre) && {
+                id: genres.find((g: any) => g.genre === selectedGenre).id,
+                genre: genres.find((g: any) => g.genre === selectedGenre).genre,
             },
-            rating: rating && {
-                id: rating.id, 
-                rating: rating.value,
-                description: rating.description,
+            rating: ratings.find((r: any) => r.value === selectedRating) && {
+                id: ratings.find((r: any) => r.value === selectedRating).id,
+                rating: ratings.find((r: any) => r.value === selectedRating).value,
+                description: ratings.find((r: any) => r.value === selectedRating).description,
             },
             actors: selectedActors.map(id => ({ id })),
             overview: data.overview
         };
 
-        console.log('uploading movie data:', movieData);
+        console.log('Uploading movie data:', movieData);
 
         try {
             const response = await axios.post('http://localhost:8080/api/movies/', movieData);
             console.log('Movie successfully added. Server response:', response.data);
+            queryClient.invalidateQueries({ queryKey: ['movies'] });
             router.push("/movies");
         } catch (error) {
             console.error('Failed to add movie:', error);
@@ -135,8 +147,8 @@ export default function AddMovieForm() {
         );
     };
 
-//    if (isLoading || actorsLoading) return <div className="text-center py-4 text-black">Loading...</div>;
-    if (error || actorsError) return <div className="text-center py-4 text-red-500">An error occurred: {(error || actorsError)?.message}</div>;
+    if (directorsLoading || actorsLoading) return <div className="text-center py-4 text-black">Loading...</div>;
+    if (directorsError || actorsError) return <div className="text-center py-4 text-red-500">An error occurred: {(directorsError || actorsError)?.message}</div>;
 
     return (
         <div className="container mx-auto px-4 py-8">
@@ -146,6 +158,7 @@ export default function AddMovieForm() {
                 <div className="mb-4">
                     <label htmlFor="movieTitle" className="block text-gray-700 text-sm font-bold mb-2">Movie Title</label>
                     <input
+                    id="movieTitle"
                         {...register("movieTitle")}
                         className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                     />
@@ -155,6 +168,7 @@ export default function AddMovieForm() {
                 <div className="mb-4">
                     <label htmlFor="movieLength" className="block text-gray-700 text-sm font-bold mb-2">Movie Length (in minutes)</label>
                     <input
+                    id="movieLength"
                         {...register("movieLength")}
                         type="number"
                         className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
@@ -165,6 +179,7 @@ export default function AddMovieForm() {
                 <div className="mb-4">
                     <label htmlFor="releaseDate" className="block text-gray-700 text-sm font-bold mb-2">Release Date</label>
                     <input
+                    id="releaseDate"
                         {...register("releaseDate")}
                         type="date"
                         className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
@@ -175,6 +190,7 @@ export default function AddMovieForm() {
                 <div className="mb-4">
                     <label htmlFor="trailerUrl" className="block text-gray-700 text-sm font-bold mb-2">Trailer URL</label>
                     <input
+                    id="trailerUrl"
                         {...register("trailerUrl")}
                         placeholder="https://www.youtube.com/watch?v=uONwiZPuihU"
                         className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
@@ -185,6 +201,7 @@ export default function AddMovieForm() {
                 <div className="mb-4">
                     <label htmlFor="overview" className="block text-gray-700 text-sm font-bold mb-2">Overview</label>
                     <textarea
+                        id="overview"
                         {...register("overview")}
                         className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                         rows={4}
@@ -192,6 +209,7 @@ export default function AddMovieForm() {
                     {errors.overview && <p className="text-red-500 text-xs italic">{errors.overview.message}</p>}
                 </div>
 
+<div className="flex flex-row items-center justify-between">
                 <div className="mb-4">
                     <Dropdown 
                         items={ratings.map(r => ({ value: r.value, description: r.description }))} 
@@ -218,11 +236,12 @@ export default function AddMovieForm() {
                         buttonLabel="Genre" 
                     />
                 </div>
+                </div>
 
                 <div className="mb-4">
                     <label className="block text-gray-700 text-sm font-bold mb-2">Actors</label>
                     <div className="max-h-60 overflow-y-auto border rounded p-2">
-                        {actors && actors?.map((actor) => (
+                        {actors?.map((actor) => (
                             <div key={actor.id} className="flex items-center mb-2">
                                 <input
                                     type="checkbox"
