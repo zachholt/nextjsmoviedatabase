@@ -35,3 +35,5 @@ interface Director {
     actors: Actor[];
     overview: string;
   }
+
+export type ReactNode = React.ReactNode;

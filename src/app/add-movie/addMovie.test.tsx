@@ -94,7 +94,7 @@ describe('AddMovieForm', () => {
         id: 0,
         movieTitle: 'Test Movie',
         movieLength: 120,
-        releaseDate: '2023-06-01',
+        releaseDate: '2023-06-02',
         trailerUrl: 'https://www.youtube.com/watch?v=test',
         director: {
           id: 1,

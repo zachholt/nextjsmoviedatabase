@@ -45,7 +45,7 @@ export default function MovieDisplay() {
             <div className="flex justify-between items-center p-4">
                 <h1 className="text-2xl font-bold text-black">Movies</h1>
                 <h1 className="text-2xl font-bold text-black">Click on a movie to view more information</h1>
-                <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onClick={handleAdd}>Add Movie</button>
+                <button className="action-button" onClick={handleAdd}>Add Movie</button>
             </div>
             <Table headers={['Movie Title', 'Movie Length', 'Release Date', 'Actions']}>
                 {data?.map((movie) => (
@@ -64,7 +64,7 @@ export default function MovieDisplay() {
                         <td className="text-black px-6 py-4 whitespace-nowrap">{new Date(movie.releaseDate).toLocaleDateString()}</td>
                         <td className="px-6 py-4 whitespace-nowrap">
                             <button
-                                className="select-none rounded-lg bg-red-500 py-3 px-6 text-center align-middle font-sans text-xs font-bold uppercase text-white shadow-md shadow-red-500/20 focus:opacity-[0.85] focus:shadow-none active:opacity-[0.85] active:shadow-none disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none"
+                                className="action-delete-button"
                                 type="button"
                                 onClick={() => handleDelete(movie)}
                             >

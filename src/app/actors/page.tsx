@@ -11,9 +11,9 @@ import FailedLoading from '@/components/FailedLoading';
 export default function ActorDisplay() {
     const router = useRouter();
 
-    useEffect(() => {
-        refetch(); 
-      }, ['actors']);
+    // useEffect(() => {
+    //     refetch(); 
+    //   }, ['actors']);
 
     const { data, isLoading, error, refetch } = useQuery<any[]>({
         queryKey: ['actors'],
@@ -52,7 +52,7 @@ export default function ActorDisplay() {
         <div className="">
             <div className="flex justify-between items-center p-4">
                 <h1 className="text-2xl font-bold text-black">Actors</h1>
-                <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onClick={handleAdd}>Add Actor</button>
+                <button className="action-button" onClick={handleAdd}>Add Actor</button>
             </div>
             <Table headers={['Actor Name', 'Date of Birth', 'Actions']}>
                 {data?.map((actor) => (
@@ -63,16 +63,16 @@ export default function ActorDisplay() {
                                 timeZone: 'UTC',
                             })}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-6 py-4 whitespace-nowrap space-x-5">
                             <button
-                                className="select-none rounded-lg bg-red-500 py-2 px-4 text-center align-middle font-sans text-xs font-bold uppercase text-white shadow-md shadow-red-500/20 focus:opacity-[0.85] focus:shadow-none active:opacity-[0.85] active:shadow-none disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none mr-2"
+                                className="action-delete-button"
                                 type="button"
                                 onClick={() => handleDelete(actor)}
                             >
                                 Delete
                             </button>
                             <button
-                                className="select-none rounded-lg bg-blue-500 py-2 px-4 text-center align-middle font-sans text-xs font-bold uppercase text-white shadow-md shadow-blue-500/20 focus:opacity-[0.85] focus:shadow-none active:opacity-[0.85] active:shadow-none disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none"
+                                className="action-button"
                                 type="button"
                                 onClick={() => handleEdit(actor.id)}
                             >
