@@ -34,7 +34,9 @@ export default function Home() {
 
   return (
     <main className="flex flex-col items-center justify-center min-h-screen">
-      <h1 className="text-4xl font-bold mb-8 text-black">Welcome to the Movie Database</h1>
+      <h1 className="text-5xl font-bold mb-8 text-black">Welcome to the Movie Database</h1>
+      <h2 className="text-3xl mb-8 text-black">We have movies</h2>
+      <h3 className="text-1xl mb-8 text-black">and actors and directors</h3>
       {/* <h2 className="text-2xl mb-8 text-black">Featured movie, director, and actor.</h2>
       <div className="grid grid-cols-3 gap-8 mb-8">
         <FeatureCard type="director" data={featuredDirector} />

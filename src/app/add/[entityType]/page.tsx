@@ -7,7 +7,6 @@ import { useRouter } from 'next/navigation';
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 
-  
 type Entity = Actor | Director;
 
 const AddEntityPage = ({ params }: { params: { entityType: string } }) => {
@@ -20,6 +19,7 @@ const AddEntityPage = ({ params }: { params: { entityType: string } }) => {
       await axios.post(`http://localhost:8080/api/${entityType}s/`, data)
         .then(() => {
           router.push(`/${entityType}s`);
+          router.refresh(); // Trigger a refresh of the entity query
         });
     } catch (error) {
       console.error(`Error adding ${entityType}:`, error);

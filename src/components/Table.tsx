@@ -1,21 +1,14 @@
 'use client'
 
-import React, { ReactNode, useState } from 'react';
-
-
 interface TableProps {
   headers: string[];
   children: string[];
 }
 
 const Table: React.FC<TableProps> = ({ headers, children }) => {
-  const [searchedVal, setSearchedVal] = useState("");
-  const filteredChildren = children.filter(children => children === searchedVal)
-
 
   return (
     <div className="overflow-x-auto">
-      {/* <input onChange={(e) => setSearchedVal(e.target.value)} /> */}
       <table className="min-w-full bg-white table-auto">
         <thead className="bg-gray-100">
           <tr>

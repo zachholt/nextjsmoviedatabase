@@ -4,6 +4,7 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
 import { useParams } from 'next/navigation';
+import { Movie } from '../../../types/movie';
 
 export default function Movie() {
   const params = useParams();
@@ -55,9 +56,9 @@ export default function Movie() {
           <div className="mt-6">
             <h2 className="text-2xl font-semibold text-black mb-2">Cast</h2>
             <ul className="list-disc pl-5">
-              {movie.actors.map((actor) => (
+              {movie.actors.map((actor: Actor) => (
                 <li key={actor.id} className="text-gray-600">
-                  {actor.firstName} {actor.lastName} (Born: {new Date(actor.dateOfBirth).toLocaleDateString()})
+                  {actor.firstName} {actor.lastName} (Born: {new Date(new Date(actor.dateOfBirth).getTime() + 86400000).toLocaleDateString()})
                 </li>
               ))}
             </ul>

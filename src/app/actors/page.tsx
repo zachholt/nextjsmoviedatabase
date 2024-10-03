@@ -8,12 +8,19 @@ import Table from '@/components/Table';
 import { useRouter } from 'next/navigation';
 import FailedLoading from '@/components/FailedLoading';
 
+export type Actor = {
+    firstName: string;
+    lastName: string;
+    dateOfBirth: string;
+    // Add other properties specific to Actor
+};
+
 export default function ActorDisplay() {
     const router = useRouter();
 
-    // useEffect(() => {
-    //     refetch(); 
-    //   }, ['actors']);
+    useEffect(() => {
+        refetch(); 
+      }, ['actors']);
 
     const { data, isLoading, error, refetch } = useQuery<any[]>({
         queryKey: ['actors'],

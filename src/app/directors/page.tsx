@@ -8,6 +8,13 @@ import Table from '@/components/Table';
 import { useRouter } from 'next/navigation';
 import FailedLoading from '@/components/FailedLoading';
 
+export type Director = {
+    firstName: string;
+    lastName: string;
+    dateOfBirth: string;
+    // Add other properties specific to Director
+};
+
 export default function DirectorDisplay() {
     const router = useRouter();
 
